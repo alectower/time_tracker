@@ -27,12 +27,16 @@ module TimeTracker
     end
 
     def diff_hours(time_one, time_two)
-      two = !time_two.nil? ? time_two : tomorrow(time_one)
+      two = !time_two.nil? ? time_two : end_time(time_one)
       ((two - time_one) / 3600.0).round(2)
     end
 
-    def tomorrow(time)
-      ::Time.new(time.year, time.mon, time.day + 1)
+    def end_time(time)
+      if time.to_date == Date.today
+        ::Time.now
+      else
+        ::Time.new(time.year, time.mon, time.day + 1)
+      end
     end
   end
 end
