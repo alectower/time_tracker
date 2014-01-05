@@ -5,9 +5,9 @@ module TimeTracker
   def self.track(args)
     command = ARGV.shift
     file = ARGV.shift
-    puts "File must be included" if file.nil?
     case command
     when 'track'
+      puts "File must be included" if file.nil?
       tracking = TimeTracker::Tracker.new(file).track
       if tracking
         puts "on the clock"
@@ -15,8 +15,10 @@ module TimeTracker
         puts "off the clock"
       end
     when 'empty'
+      puts "File must be included" if file.nil?
       TimeTracker::Tracker.new(file).empty
     when 'hours'
+      puts "File must be included" if file.nil?
       while arg = ARGV.shift
         case arg
         when /-s|--start/
@@ -43,11 +45,15 @@ module TimeTracker
       end
       puts "total:      #{info[:total_hours]} hours"
     else
-      puts "\n\tUsage: time_tracker <command> <file> [-s|--start <YYYY-MM-DD>] [-e|--end <YYYY-MM-DD>]\n\n\
-        Command:\n\n\
+      puts "\n\tUsage: time_tracker <command> <file> [OPTIONS]\n\n\
+        Commands\n\
             track        track time in file (file will be placed in ~/.hours dir)\n\
             empty        empty tracked time\n\
-            hours        print hours tracked for date range\n\n"
+            hours        print hours tracked for date range\n\
+
+        Options\n\
+            -s, --start <YYYY-MM-DD>    used with hours command
+            -e, --end <YYYY-MM-DD>      used with hours command\n\n"
     end
   end
 end
