@@ -40,8 +40,8 @@ module TimeTracker
         end
       end
       info = TimeTracker::Tracker.new(file).hours_tracked(start_date, end_date)
-      info[:daily_hours].sort.each do |k, v|
-        puts "#{k}: #{v} hours"
+      info[:daily_hours].sort.each do |date, hours|
+        puts "#{date}: #{hours.to_f.round(2)} hours"
       end
       puts "total:      #{info[:total_hours]} hours"
     else

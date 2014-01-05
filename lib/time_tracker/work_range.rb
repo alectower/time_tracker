@@ -18,12 +18,12 @@ module TimeTracker
       in_time_range.each_slice(2) do |times|
         first, second = times
         date = first.to_date
-        daily_hours[date] = 0 unless daily_hours[first.to_date]
+        daily_hours[date] = 0 unless daily_hours[date]
         interval = diff_hours(first, second)
         total_hours += interval
         daily_hours[date] += interval
       end
-      {total_hours: total_hours, daily_hours: daily_hours}
+      {total_hours: total_hours.to_f.round(2), daily_hours: daily_hours}
     end
 
     private
@@ -34,7 +34,7 @@ module TimeTracker
 
     def diff_hours(time_one, time_two)
       two = !time_two.nil? ? time_two : end_time(time_one)
-      ((two - time_one) / 3600.0).round(2)
+      Rational(two - time_one, 3600.0)
     end
 
     def end_time(time)
