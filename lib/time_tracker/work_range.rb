@@ -13,11 +13,17 @@ module TimeTracker
     end
 
     def hours
-      hours = 0
+      total_hours = 0
+      daily_hours = {}
       in_time_range.each_slice(2) do |times|
-        hours += diff_hours(times[0], times[1])
+        first, second = times
+        date = first.to_date
+        daily_hours[date] = 0 unless daily_hours[first.to_date]
+        interval = diff_hours(first, second)
+        total_hours += interval
+        daily_hours[date] += interval
       end
-      hours
+      {total_hours: total_hours, daily_hours: daily_hours}
     end
 
     private
