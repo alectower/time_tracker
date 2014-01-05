@@ -1,21 +1,22 @@
-require 'time_tracker/time'
+require_relative 'work_range'
+require 'date'
 
 module TimeTracker
   class Tracker
 
-    TIME_FILE = "#{ENV['HOME']}/.time_tracker"
+    TIME_DIR = "#{ENV['HOME']}/.hours"
 
-    attr_reader :file, :io
+    attr_reader :file
 
-    private :file, :io
+    private :file
 
-    def initialize(args = {})
-      @io = args[:io] || File
-      @file = args[:file] || TIME_FILE
+    def initialize(file)
+      Dir.mkdir(TIME_DIR) unless Dir.exists? TIME_DIR
+      @file = "#{TIME_DIR}/#{file}"
     end
 
     def track
-      io.open(file, 'a+') do |f|
+      File.open(file, 'a+') do |f|
         time = ::Time.now
         f.puts time
         f.rewind
@@ -24,27 +25,17 @@ module TimeTracker
     end
 
     def empty
-      io.truncate(file, 0)
+      File.truncate(file, 0)
     end
 
-    def hours_tracked(days = nil)
-      days =  days.nil? ? 1 : days.to_i
-      hours = 0
-      lines = in_time_range Time.range(days)
-      lines.delete_at(-1) if lines.size % 2 != 0
-      lines.each_slice(2) do |times|
-        hours += Time.diff_hours(times[0], times[1])
+    def hours_tracked(start_date, end_date)
+      TimeTracker::WorkRange.new(timestamps, start_date, end_date).hours
+    end
+
+    def timestamps
+      IO.readlines(file).map do |t|
+        ::DateTime.parse(t.chomp).to_time
       end
-      hours
     end
-
-    private
-
-    def in_time_range(range)
-      IO.readlines(file).map { |t|
-        DateTime.parse(t.chomp).to_time
-      }.select { |l| range.cover?(l) }
-    end
-
   end
 end
