@@ -1,41 +1,33 @@
-require_relative 'work_range'
-require 'date'
+require 'yaml/store'
 
 module TimeTracker
   class Tracker
 
-    TIME_DIR = "#{ENV['HOME']}/.hours"
-
-    attr_reader :file
-
-    private :file
-
-    def initialize(file)
-      Dir.mkdir(TIME_DIR) unless Dir.exists? TIME_DIR
-      @file = "#{TIME_DIR}/#{file}"
+    def self.file
+      ENV['HOURS'] || "#{ENV['HOME']}/.tt"
     end
 
-    def track
-      File.open(file, 'a+') do |f|
-        time = ::Time.now
-        f.puts time
-        f.rewind
-        f.readlines.size % 2 != 0
+    def self.track(project, task)
+      abort 'project argument required' unless project
+      task = 'general' unless task
+      store = YAML::Store.new(file)
+      store.transaction do |s|
+        project_tasks = s[project]
+        s[project] = {} unless project_tasks
+        track_tasks(s, project, task)
+        s[project][task].size
       end
     end
 
-    def empty
-      File.truncate(file, 0)
-    end
-
-    def hours_tracked(start_date, end_date)
-      TimeTracker::WorkRange.new(timestamps, start_date, end_date).hours
-    end
-
-    def timestamps
-      IO.readlines(file).map do |t|
-        ::DateTime.parse(t.chomp).to_time
+    def self.track_tasks(store, project, task)
+      time = Time.now
+      tasks = store[project][task]
+      if tasks
+        tasks << time
+      else
+        store[project][task] = [time]
       end
     end
+
   end
 end

@@ -1,24 +1,26 @@
 require 'optparse'
 require_relative 'time_tracker/tracker'
+require_relative 'time_tracker/reporter'
 
 module TimeTracker
   def self.track(args)
     command = ARGV.shift
-    file = ARGV.shift
     case command
     when 'track'
-      puts "File must be included" if file.nil?
-      tracking = TimeTracker::Tracker.new(file).track
-      if tracking
+      project_task = ARGV.shift
+      project, task = project_task.split(":").map { |a| a.to_sym } if project_task
+      abort 'missing required argument <project>' unless project && !project.empty?
+      tracking = Tracker.track(project, task)
+      if tracking % 2 != 0
         puts "on the clock"
       else
         puts "off the clock"
       end
-    when 'empty'
-      puts "File must be included" if file.nil?
-      TimeTracker::Tracker.new(file).empty
     when 'hours'
-      puts "File must be included" if file.nil?
+      if ARGV.size % 2 != 0
+        project_task = ARGV.shift
+        project, task = project_task.split(":").map { |a| a.to_sym } if project_task
+      end
       while arg = ARGV.shift
         case arg
         when /-s|--start/
@@ -39,21 +41,38 @@ module TimeTracker
           end_date = Time.new(end_date[0], end_date[1], end_date[2]) if end_date
         end
       end
-      info = TimeTracker::Tracker.new(file).hours_tracked(start_date, end_date)
-      info[:daily_hours].sort.each do |date, hours|
-        puts "#{date}: #{hours.to_f.round(2)} hours"
+      projects = TimeTracker::Reporter.hours_tracked(project, task, start_date, end_date)
+      total_hours = 0
+      projects.each do |project, tasks|
+        puts "Project: #{project}"
+        tasks.each do |task, hours|
+          puts "  Task: #{task}"
+          hours[:daily_hours].sort.each do |date, hours|
+            puts "  #{date}: #{hours} hours"
+          end
+          puts "  total:      #{hours[:total_hours]} hours"
+          total_hours = (total_hours + hours[:total_hours]).round(3)
+          puts
+        end
       end
-      puts "total:      #{info[:total_hours]} hours"
+      puts "All Projects and tasks\ntotal: #{total_hours}"
     else
-      puts "\n\tUsage: time_tracker <command> <file> [OPTIONS]\n\n\
+      puts "\n\tUsage: time_tracker <command> [project]:[task] [OPTIONS]\n\n\
         Commands\n\
-            track        track time in file (file will be placed in ~/.hours dir)\n\
-            empty        empty tracked time\n\
-            hours        print hours tracked for date range\n\
+            track        track time for project tasks\n\
+            hours        print hours tracked for project tasks in date range\n\
 
         Options\n\
             -s, --start <YYYY-MM-DD>    used with hours command
-            -e, --end <YYYY-MM-DD>      used with hours command\n\n"
+            -e, --end <YYYY-MM-DD>      used with hours command\n\n\
+        Examples\n\
+            time_tracker track company:api\n\
+            time_tracker track company:api\n\
+            time_tracker track company:frontend\n\
+            time_tracker track company:frontend\n\
+            time_tracker hours company:api\n\
+            time_tracker hours company:frontend\n\
+            time_tracker hours company\n\n"
     end
   end
 end
