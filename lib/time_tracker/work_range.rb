@@ -6,20 +6,35 @@ module TimeTracker
       end_time = end_time || times.last
       range = start_time..end_time
 
-      total_hours = 0
-      daily_hours = {}
-      in_time_range(times, range).each_slice(2) do |times|
-        first, second = times
-        date = first.to_date
-        daily_hours[date] = 0 unless daily_hours[date]
-        interval = nearest_point_five diff_hours(first, second)
-        total_hours = (total_hours + interval).round(3)
-        daily_hours[date] = (daily_hours[date] + interval).round(3)
-      end
+      daily_hours = daily(times, range)
+      total_hours = total(daily_hours)
+
       {total_hours: total_hours, daily_hours: daily_hours}
     end
 
     private
+
+    def self.daily(times, range)
+      hours = {}
+      in_time_range(times, range).each_slice(2) do |times|
+        first, second = times
+        date = first.to_date
+        hours[date] = 0 unless hours[date]
+        interval = diff_hours(first, second)
+        hours[date] += interval
+      end
+      hours
+    end
+
+    def self.total(daily_hours)
+      total = 0
+      daily_hours.each do |k, v|
+        rounded_time = nearest_quarter(v)
+        daily_hours[k] = rounded_time
+        total += rounded_time
+      end
+      total
+    end
 
     def self.in_time_range(timestamps, range)
       timestamps.select { |l| range.cover?(l) }
@@ -27,11 +42,11 @@ module TimeTracker
 
     def self.diff_hours(time_one, time_two)
       two = !time_two.nil? ? time_two : end_time(time_one)
-      Rational(two - time_one, 3600.0)
+      (two - time_one) / 3600.0
     end
 
-    def self.nearest_point_five(num)
-      (num * 20).round / 20.0
+    def self.nearest_quarter(num)
+      (num * 4).ceil / 4.0
     end
 
     def self.end_time(time)
