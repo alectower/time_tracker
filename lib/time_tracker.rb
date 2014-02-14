@@ -44,15 +44,21 @@ module TimeTracker
       projects = TimeTracker::Reporter.hours_tracked(project, task, start_date, end_date)
       total_hours = 0
       projects.each do |project, tasks|
-        puts "Project: #{project}"
+        first = true
         tasks.each do |task, hours|
-          puts "  Task: #{task}"
-          hours[:daily_hours].sort.each do |date, hours|
-            puts "  #{date}: #{hours} hours"
+          if hours[:daily_hours].size > 0
+            if first
+              puts "Project: #{project}"
+              first = false
+            end
+            puts "  Task: #{task}"
+            hours[:daily_hours].sort.each do |date, hours|
+              puts "    #{date}: #{hours} hours"
+            end
+            puts "    total:      #{hours[:total_hours]} hours"
+            total_hours = (total_hours + hours[:total_hours]).round(3)
+            puts
           end
-          puts "  total:      #{hours[:total_hours]} hours"
-          total_hours = (total_hours + hours[:total_hours]).round(3)
-          puts
         end
       end
       puts "All Projects and tasks\ntotal: #{total_hours}"
