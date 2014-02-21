@@ -45,6 +45,7 @@ module TimeTracker
       total_hours = 0
       projects.each do |project, tasks|
         first = true
+        project_hours = 0
         tasks.each do |task, hours|
           if hours[:daily_hours].size > 0
             if first
@@ -56,9 +57,13 @@ module TimeTracker
               puts "    #{date}: #{hours} hours"
             end
             puts "    total:      #{hours[:total_hours]} hours"
+            project_hours = (project_hours + hours[:total_hours]).round(3)
             total_hours = (total_hours + hours[:total_hours]).round(3)
             puts
           end
+        end
+        if project_hours > 0
+          puts "  total:        #{project_hours} hours\n\n"
         end
       end
       puts "All Projects and tasks\ntotal: #{total_hours}"
