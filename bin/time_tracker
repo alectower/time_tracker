@@ -2,4 +2,4 @@
 
 require_relative '../lib/time_tracker'
 
-TimeTracker.track(ARGV)
+TimeTracker::CLI.new.process

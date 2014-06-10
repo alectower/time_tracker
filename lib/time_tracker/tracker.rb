@@ -9,7 +9,7 @@ module TimeTracker
     def initialize(args)
       file = ENV['HOURS'] || "#{ENV['HOME']}/.tt"
       @store = YAML::Store.new(file)
-      @project = args.fetch(:project)
+      @project = args[:project]
       @task = args[:task] || 'general'
     end
 

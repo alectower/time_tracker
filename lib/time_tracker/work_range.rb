@@ -12,33 +12,23 @@ module TimeTracker
     end
 
     def hours
-      daily = daily_hours
-      {total_hours: total(daily), daily_hours: daily}
-    end
-
-    private
-
-    def daily_hours
-      hours = {}
+      daily_hours = {}
+      total_hours = 0
       in_time_range.each_slice(2) do |t|
         first, second = t
         date = first.to_date
-        hours[date] = 0 unless hours[date]
+        daily_hours[date] = 0 unless daily_hours[date]
         interval = diff_hours(first, second)
-        hours[date] += interval
+        daily_hours[date] += interval
+        total_hours += interval
       end
-      hours
+      {
+        total_hours: nearest_quarter(total_hours),
+        daily_hours: daily_hours
+      }
     end
 
-    def total(daily)
-      total = 0
-      daily.each do |k, v|
-        rounded_time = nearest_quarter(v)
-        daily_hours[k] = rounded_time
-        total += rounded_time
-      end
-      total
-    end
+    private
 
     def in_time_range
       times.select { |l| range.cover?(l) }

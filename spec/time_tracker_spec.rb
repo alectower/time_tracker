@@ -10,12 +10,6 @@ module TimeTracker
       File.delete ENV['HOURS'] if File.exists? ENV['HOURS']
     end
 
-    it 'fails without a project' do
-      expect {
-        Tracker.new(task: 'task').track
-      }.to raise_error
-    end
-
     it 'tracks number of timestamps for project task' do
       Tracker.new(project: 'project', task: 'task').track.should eq 1
       Tracker.new(project: 'project', task: 'task').track.should eq 2
