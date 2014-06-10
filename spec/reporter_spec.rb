@@ -60,8 +60,8 @@ module TimeTracker
           },
         }
       }
-      Reporter.hours_tracked(nil, nil, Time.new(2014,1,1), Time.new(2014,1,4)).should eq expected
-      Reporter.hours_tracked(nil, :task_one, Time.new(2014,1,1), Time.new(2014,1,4)).should eq expected
+      Reporter.new(start_date: Time.new(2014,1,1), end_date: Time.new(2014,1,4)).hours_tracked.should eq expected
+      Reporter.new(task: :task_one, start_date: Time.new(2014,1,1), end_date: Time.new(2014,1,4)).hours_tracked.should eq expected
     end
 
     it 'reports total hours for all tasks of a project' do
@@ -83,7 +83,7 @@ module TimeTracker
           }
         }
       }
-      Reporter.hours_tracked(:project_one, nil, Time.new(2014,1,1), Time.new(2014,1,4)).should eq expected
+      Reporter.new(project: :project_one, start_date: Time.new(2014,1,1), end_date: Time.new(2014,1,4)).hours_tracked.should eq expected
     end
 
     it 'reports total hours for one task of a project' do
@@ -99,7 +99,7 @@ module TimeTracker
           },
         }
       }
-      Reporter.hours_tracked(:project_one, :task_one, Time.new(2014,1,1), Time.new(2014,1,4)).should eq expected
+      Reporter.new(project: :project_one, task: :task_one, start_date: Time.new(2014,1,1), end_date: Time.new(2014,1,4)).hours_tracked.should eq expected
     end
   end
 end

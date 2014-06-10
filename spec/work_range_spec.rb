@@ -18,7 +18,7 @@ module TimeTracker
     let(:third) { Date.new 2014, 01, 03}
 
     it 'calculates hours with start and end time' do
-      hours = WorkRange.hours(timestamps, start_time, end_time)
+      hours = WorkRange.new(times: timestamps, start_time: start_time, end_time: end_time).hours
       hours[:total_hours].should eq 1.00
       hours[:daily_hours][first].should eq 1.00
       hours[:daily_hours][second].should eq nil
@@ -26,7 +26,7 @@ module TimeTracker
     end
 
     it 'calculates hours with start time and default end time' do
-      hours = WorkRange.hours(timestamps, start_time, nil)
+      hours = WorkRange.new(times: timestamps, start_time: start_time).hours
       hours[:total_hours].should eq 23.00
       hours[:daily_hours][first].should eq 1.00
       hours[:daily_hours][second].should eq 6.00
@@ -34,7 +34,7 @@ module TimeTracker
     end
 
     it 'calculates hours with default start time and end time' do
-      hours = WorkRange.hours(timestamps, nil, end_time)
+      hours = WorkRange.new(times: timestamps, end_time: end_time).hours
       hours[:total_hours].should eq 1.00
       hours[:daily_hours][first].should eq 1.00
       hours[:daily_hours][second].should eq nil
@@ -42,7 +42,7 @@ module TimeTracker
     end
 
     it 'calculates hours with default start and default end time' do
-      hours = WorkRange.hours(timestamps, nil, nil)
+      hours = WorkRange.new(times: timestamps).hours
       hours[:total_hours].should eq 23.00
       hours[:daily_hours][first].should eq 1.00
       hours[:daily_hours][second].should eq 6.00

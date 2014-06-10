@@ -3,14 +3,17 @@ require 'yaml/store'
 module TimeTracker
   class Tracker
 
-    def self.file
-      ENV['HOURS'] || "#{ENV['HOME']}/.tt"
+    attr_reader :store, :project, :task
+    private :store, :project, :task
+
+    def initialize(args)
+      file = ENV['HOURS'] || "#{ENV['HOME']}/.tt"
+      @store = YAML::Store.new(file)
+      @project = args.fetch(:project)
+      @task = args[:task] || 'general'
     end
 
-    def self.track(project, task)
-      abort 'project argument required' unless project
-      task = 'general' unless task
-      store = YAML::Store.new(file)
+    def track
       store.transaction do |s|
         project_tasks = s[project]
         s[project] = {} unless project_tasks
@@ -19,7 +22,9 @@ module TimeTracker
       end
     end
 
-    def self.track_tasks(store, project, task)
+    private
+
+    def track_tasks(store, project, task)
       time = Time.now
       tasks = store[project][task]
       if tasks
@@ -28,6 +33,5 @@ module TimeTracker
         store[project][task] = [time]
       end
     end
-
   end
 end

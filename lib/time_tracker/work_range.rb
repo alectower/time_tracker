@@ -1,23 +1,27 @@
 module TimeTracker
   class WorkRange
 
-    def self.hours(times, start_time, end_time)
-      start_time = start_time || times.first
-      end_time = end_time || times.last
-      range = start_time..end_time
+    attr_reader :times, :start_time, :end_time, :range
+    private :times, :start_time, :end_time, :range
 
-      daily_hours = daily(times, range)
-      total_hours = total(daily_hours)
+    def initialize(args)
+      @times = args[:times]
+      @start_time = args[:start_time] || @times.first
+      @end_time = args[:end_time] || @times.last
+      @range = @start_time..@end_time
+    end
 
-      {total_hours: total_hours, daily_hours: daily_hours}
+    def hours
+      daily = daily_hours
+      {total_hours: total(daily), daily_hours: daily}
     end
 
     private
 
-    def self.daily(times, range)
+    def daily_hours
       hours = {}
-      in_time_range(times, range).each_slice(2) do |times|
-        first, second = times
+      in_time_range.each_slice(2) do |t|
+        first, second = t
         date = first.to_date
         hours[date] = 0 unless hours[date]
         interval = diff_hours(first, second)
@@ -26,9 +30,9 @@ module TimeTracker
       hours
     end
 
-    def self.total(daily_hours)
+    def total(daily)
       total = 0
-      daily_hours.each do |k, v|
+      daily.each do |k, v|
         rounded_time = nearest_quarter(v)
         daily_hours[k] = rounded_time
         total += rounded_time
@@ -36,20 +40,20 @@ module TimeTracker
       total
     end
 
-    def self.in_time_range(timestamps, range)
-      timestamps.select { |l| range.cover?(l) }
+    def in_time_range
+      times.select { |l| range.cover?(l) }
     end
 
-    def self.diff_hours(time_one, time_two)
+    def diff_hours(time_one, time_two)
       two = !time_two.nil? ? time_two : end_time(time_one)
       (two - time_one) / 3600.0
     end
 
-    def self.nearest_quarter(num)
+    def nearest_quarter(num)
       (num * 4).ceil / 4.0
     end
 
-    def self.end_time(time)
+    def end_time(time)
       if time.to_date == Date.today
         Time.now
       else

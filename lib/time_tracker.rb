@@ -10,7 +10,7 @@ module TimeTracker
       project_task = ARGV.shift
       project, task = project_task.split(":").map { |a| a.to_sym } if project_task
       abort 'missing required argument <project>' unless project && !project.empty?
-      tracking = Tracker.track(project, task)
+      tracking = Tracker.new(project: project, task: task).track
       if tracking % 2 != 0
         puts "on the clock"
       else
@@ -41,7 +41,7 @@ module TimeTracker
           end_date = Time.new(end_date[0], end_date[1], end_date[2]) if end_date
         end
       end
-      projects = TimeTracker::Reporter.hours_tracked(project, task, start_date, end_date)
+      projects = TimeTracker::Reporter.new(project: project, task: task, start_date: start_date, end_date: end_date).hours_tracked
       total_hours = 0
       projects.each do |project, tasks|
         first = true
@@ -54,11 +54,11 @@ module TimeTracker
             end
             puts "  Task: #{task}"
             hours[:daily_hours].sort.each do |date, hours|
-              puts "    #{date}: #{hours} hours"
+              puts "    #{date}: #{hours.round(2)} hours"
             end
             puts "    total:      #{hours[:total_hours]} hours"
-            project_hours = (project_hours + hours[:total_hours]).round(3)
-            total_hours = (total_hours + hours[:total_hours]).round(3)
+            project_hours = (project_hours + hours[:total_hours]).round(2)
+            total_hours = (total_hours + hours[:total_hours]).round(2)
             puts
           end
         end
