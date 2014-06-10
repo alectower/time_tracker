@@ -6,8 +6,8 @@ Gem::Specification.new do |gem|
   gem.version       = TimeTracker::VERSION
   gem.authors       = ["Alec Tower"]
   gem.email         = ["alectower@gmail.com"]
-  gem.description   = %q{}
-  gem.summary       = %q{}
+  gem.description   = %q{Ruby based cli for project time tracking}
+  gem.summary       = %q{Ruby based cli for project time tracking}
   gem.homepage      = "https://github.com/uniosx/time_tracker"
   gem.platform      = Gem::Platform::RUBY
   gem.files         = `git ls-files`.split($\)
