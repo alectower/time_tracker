@@ -5,6 +5,7 @@ Gem::Specification.new do |gem|
   gem.name          = "time-tracker"
   gem.version       = TimeTracker::VERSION
   gem.authors       = ["Alec Tower"]
+  gem.licenses      = ['MIT']
   gem.email         = ["alectower@gmail.com"]
   gem.description   = %q{Ruby based cli for project time tracking}
   gem.summary       = %q{Ruby based cli for project time tracking}
