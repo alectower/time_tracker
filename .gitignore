@@ -4,8 +4,3 @@ doc
 .yardoc
 .bundle
 pkg
-.DS_Store
-*.swp
-*.un~
-tags
-*.gem
