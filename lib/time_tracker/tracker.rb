@@ -18,7 +18,7 @@ module TimeTracker
         project_tasks = s[project]
         s[project] = {} unless project_tasks
         track_tasks(s, project, task)
-        s[project][task].size
+        s[project][task]
       end
     end
 

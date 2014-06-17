@@ -1,9 +1,17 @@
 require 'optparse'
+require_relative 'time_tracker/config'
 require_relative 'time_tracker/tracker'
 require_relative 'time_tracker/reporter'
+require_relative 'time_tracker/work_range'
 
 module TimeTracker
   class CLI
+    attr_reader :config
+
+    def initialize
+      @config = Config.new
+    end
+
     def process
       command = ARGV.shift
       case command
@@ -12,43 +20,36 @@ module TimeTracker
       when 'hours'
         print_hours
       else
-        puts "\n\tUsage: time_tracker <command> [project]:[task] [OPTIONS]\n\n\
-          Commands\n\
-              track        track time for project tasks\n\
-              hours        print hours tracked for project tasks in date range\n\
-
-          Options\n\
-              -s, --start <YYYY-MM-DD>    used with hours command
-              -e, --end <YYYY-MM-DD>      used with hours command\n\n\
-          Examples\n\
-              time_tracker track company:api\n\
-              time_tracker track company:api\n\
-              time_tracker track company:frontend\n\
-              time_tracker track company:frontend\n\
-              time_tracker hours company:api\n\
-              time_tracker hours company:frontend\n\
-              time_tracker hours company -s 2014-1-1\n\
-              time_tracker hours company -s 2014-1-1 -e 2014-2-1\n\
-              time_tracker hours -s 2014-1-1 -e 2014-2-1\n\n"
+        print_options
       end
     end
 
     def track_time
       project_task = ARGV.shift
-      project, task = project_task.split(":").map { |a| a.to_sym } if project_task
-      abort 'missing required argument <project>' unless project && !project.empty?
-      tracking = Tracker.new(project: project, task: task).track
-      if tracking % 2 != 0
+      project, task = project_task.split(":").
+        map { |a| a.to_sym } if project_task
+      abort 'missing required argument <project>' unless
+        project && !project.empty?
+      timestamps = Tracker.new(project: project, task: task).
+        track
+      tracking = timestamps.size % 2 != 0
+      if tracking
         puts "on the clock"
       else
         puts "off the clock"
       end
+      event = tracking ? :tracking_on : :tracking_off
+      hours = WorkRange.new(times: timestamps).
+        hours[:total_hours]
+      config.sync event: event, project: project.to_s,
+        task: task.to_s, hours: hours
     end
 
     def print_hours
       if ARGV.size > 1 && ARGV.size % 2 != 0
         project_task = ARGV.shift
-        project, task = project_task.split(":").map { |a| a.to_sym } if project_task
+        project, task = project_task.split(":").
+          map { |a| a.to_sym } if project_task
       end
       while arg = ARGV.shift
         case arg
@@ -58,9 +59,33 @@ module TimeTracker
           end_date = get_end_date
         end
       end
-      project_hours = TimeTracker::Reporter.new(project: project, task: task,
-        start_date: start_date, end_date: end_date).hours_tracked
+      project_hours = Reporter.new(
+        project: project, task: task,
+        start_date: start_date,
+        end_date: end_date
+      ).hours_tracked
       print_project_task_hours(project_hours)
+    end
+
+    def print_options
+      puts "\n\tUsage: time_tracker <command> [project]:[task] [OPTIONS]\n\n\
+        Commands\n\
+            track        track time for project tasks\n\
+            hours        print hours tracked for project tasks in date range\n\
+
+        Options\n\
+            -s, --start <YYYY-MM-DD>    used with hours command
+            -e, --end <YYYY-MM-DD>      used with hours command\n\n\
+        Examples\n\
+            time_tracker track company:api\n\
+            time_tracker track company:api\n\
+            time_tracker track company:frontend\n\
+            time_tracker track company:frontend\n\
+            time_tracker hours company:api\n\
+            time_tracker hours company:frontend\n\
+            time_tracker hours company -s 2014-1-1\n\
+            time_tracker hours company -s 2014-1-1 -e 2014-2-1\n\
+            time_tracker hours -s 2014-1-1 -e 2014-2-1\n\n"
     end
 
     def get_start_date
@@ -73,7 +98,7 @@ module TimeTracker
     def get_end_date
       end_date = ARGV.shift
       abort 'Include end date with -e switch' if end_date.nil?
-      end_date  = end_date.split("-")
+      end_date = end_date.split("-")
       Time.new(end_date[0], end_date[1], end_date[2])
     end
 
