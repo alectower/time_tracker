@@ -33,38 +33,40 @@ module TimeTracker
     private
 
     def all_hours
-      rows = EntryLog.where start_time: start_date,
+      entries = EntryLog.where start_time: start_date,
         stop_time: end_date
-      build_hours(rows)
+      build_hours(entries)
     end
 
     def project_hours
-      rows = EntryLog.where project_name: project,
+      entries = EntryLog.where project_name: project,
         start_time: start_date, stop_time: end_date
-      build_hours(rows)
+      build_hours(entries)
     end
 
     def project_task_hours
-      rows = EntryLog.where project_name: project,
+      entries = EntryLog.where project_name: project,
         task_name: task, start_time: start_date,
         stop_time: end_date
-      build_hours(rows)
+      build_hours(entries)
     end
 
-    def build_hours(rows)
+    def build_hours(entries)
       hours = {}
       hours[:total] = 0
-      rows.each do |r|
-        project = r['project_name']
-        task = r['task_name']
-        description = r['description']
+      entries.each do |e|
+        project = e.project_name
+        task = e.task_name
+        description = e.description
 
         hours[project] = {} unless hours[project]
         hours[project][task] = {} unless hours[project][task]
         hours[project][task][description] = {} unless hours[project][task][description]
 
-        start_time = Time.at(r['start_time']).utc
-        stop_time = Time.at(r['stop_time']).utc if r['stop_time']
+        start_time = Time.at(e.start_time).utc
+        if !e.stop_time.nil? && e.stop_time != 0
+          stop_time = Time.at(e.stop_time).utc
+        end
         if !hours[project][task][description][start_time.to_date]
           hours[project][task][description][start_time.to_date] = 0
         end

@@ -3,6 +3,10 @@ require_relative 'db'
 module TimeTracker
   class EntryLog
 
+    attr_reader :id, :start_time, :stop_time, :entry_id,
+      :description, :task_id, :task_name, :project_id,
+      :project_name
+
     def self.insert(args)
       db.execute "insert into entry_logs
         (start_time, stop_time, entry_id,
@@ -18,8 +22,10 @@ module TimeTracker
           args[:project_id],
           args[:project_name].to_s
         ]
-      db.execute("select last_insert_rowid()").
+      id = db.execute("select last_insert_rowid()").
         first[0]
+      res = db.execute('select * from entry_logs where id = ?', id).first
+      new(res)
     end
 
     def self.update(args)
@@ -39,10 +45,27 @@ module TimeTracker
         add_param(sql, params, k, v, first) if !v.nil?
         first = false
       end
-      db.execute sql, params
+      results = []
+      res = db.execute(sql, params)
+      res.each do |r|
+        results << new(r)
+      end
+      results
     end
 
     private
+
+    def initialize(args)
+      @id = args['id']
+      @start_time = args['start_time']
+      @stop_time = args['stop_time']
+      @entry_id = args['entry_id']
+      @description = args['description']
+      @task_id = args['task_id']
+      @task_name = args['task_name'].to_s
+      @project_id = args['project_id']
+      @project_name = args['project_name'].to_s
+    end
 
     def self.add_param(sql, params, k, v, first)
       if v =~ /null/

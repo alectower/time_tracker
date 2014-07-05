@@ -16,7 +16,7 @@ module TimeTracker
       @on_sync = block
     end
 
-    def call(args)
+    def call(*args)
       sync_entries
       if @on_sync
         @on_sync.call args
