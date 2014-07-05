@@ -1,15 +1,14 @@
 require 'optparse'
-require_relative 'time_tracker/config'
+require_relative 'time_tracker/sync'
 require_relative 'time_tracker/tracker'
 require_relative 'time_tracker/reporter'
-require_relative 'time_tracker/work_range'
 
 module TimeTracker
   class CLI
-    attr_reader :config
+    attr_reader :sync
 
     def initialize
-      @config = Config.new
+      @sync = Sync.new
     end
 
     def process
@@ -24,32 +23,33 @@ module TimeTracker
       end
     end
 
+    private
+
     def track_time
-      project_task = ARGV.shift
-      project, task = project_task.split(":").
-        map { |a| a.to_sym } if project_task
-      abort 'missing required argument <project>' unless
-        project && !project.empty?
-      timestamps = Tracker.new(project: project, task: task).
-        track
-      tracking = timestamps.size % 2 != 0
-      if tracking
+      project, task, description = project_args
+      entry_log = Tracker.new(project: project,
+        task: task, description: description).track
+      event = if entry_log['stop_time'].nil?
         puts "on the clock"
+        :tracking_on
       else
         puts "off the clock"
+        :tracking_off
       end
-      event = tracking ? :tracking_on : :tracking_off
-      hours = WorkRange.new(times: timestamps).
-        hours[:total_hours]
-      config.sync event: event, project: project.to_s,
-        task: task.to_s, hours: hours
+      sync.call event: event, entry_log: entry_log
+    end
+
+    def project_args
+      project_task = ARGV.shift
+      project, task, description = project_task.split ':'
+      fail 'Project' unless !project.nil? && !project.empty?
+      fail 'Task' unless !task.nil? && !task.empty?
+      [project, task, description]
     end
 
     def print_hours
-      if ARGV.size > 1 && ARGV.size % 2 != 0
-        project_task = ARGV.shift
-        project, task = project_task.split(":").
-          map { |a| a.to_sym } if project_task
+      if ARGV.size % 2 != 0
+        project, task, description = project_args
       end
       while arg = ARGV.shift
         case arg
@@ -60,15 +60,17 @@ module TimeTracker
         end
       end
       project_hours = Reporter.new(
-        project: project, task: task,
+        project: project,
+        task: task,
+        description: description,
         start_date: start_date,
         end_date: end_date
       ).hours_tracked
-      print_project_task_hours(project_hours)
+      print_projects(project_hours)
     end
 
     def print_options
-      puts "\n\tUsage: time_tracker <command> [project]:[task] [OPTIONS]\n\n\
+      puts "\n\tUsage: time_tracker <command> [project]:[task]:[description] [OPTIONS]\n\n\
         Commands\n\
             track        track time for project tasks\n\
             hours        print hours tracked for project tasks in date range\n\
@@ -81,6 +83,7 @@ module TimeTracker
             time_tracker track company:api\n\
             time_tracker track company:frontend\n\
             time_tracker track company:frontend\n\
+            time_tracker track company:frontend:'Update hover css'\n\
             time_tracker hours company:api\n\
             time_tracker hours company:frontend\n\
             time_tracker hours company -s 2014-1-1\n\
@@ -102,32 +105,46 @@ module TimeTracker
       Time.new(end_date[0], end_date[1], end_date[2])
     end
 
-    def print_project_task_hours(projects)
-      total_hours = 0
-      projects.each do |project, tasks|
-        first = true
-        project_hours = 0
-        tasks.each do |task, hours|
-          if hours[:daily_hours].size > 0
-            if first
-              puts "Project: #{project}"
-              first = false
-            end
-            puts "  Task: #{task}"
-            hours[:daily_hours].sort.each do |date, hours|
-              puts "    #{date}:           #{hours.round(2)} hours"
-            end
-            puts "    total (rounded):      #{hours[:total_hours]} hours"
-            project_hours = (project_hours + hours[:total_hours]).round(2)
-            total_hours = (total_hours + hours[:total_hours]).round(2)
-            puts
-          end
-        end
+    def print_projects(hours)
+      total_hours = hours[:total]
+      hours.delete :total
+      hours.each do |project, tasks|
+        project_hours = print_tasks(project, tasks)
         if project_hours > 0
-          puts "  total (rounded):        #{project_hours} hours\n\n"
+          puts "  total:                    #{project_hours.round(2)} hours\n\n"
         end
       end
-      puts "All Projects and tasks\ntotal: #{total_hours}"
+      puts "All Projects and tasks\ntotal: #{total_hours.round(2)}"
+    end
+
+    def print_tasks(project, tasks)
+      project_hours = 0
+      first = true
+      tasks.each do |task, description|
+        project_hours += print_task(project, task, description, first)
+        first = false
+      end
+      project_hours
+    end
+
+    def print_task(project, task, description, first)
+      total = description[:total]
+      description.delete :total
+      if description.size > 0
+        if first
+          puts "Project: #{project}"
+        end
+        puts "  Task: #{task}"
+        description.each do |title, date|
+          puts "    Description: #{title}"
+          date.each do |day, hours|
+            puts "      #{day}:           #{hours.round(2)} hours"
+          end
+        end
+        puts "      total:                #{total.round(2)} hours"
+        puts
+      end
+      total
     end
   end
 end

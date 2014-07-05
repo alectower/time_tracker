@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'time_tracker/config'
+require 'time_tracker/sync'
 
 module TimeTracker
-  describe Config do
+  describe Sync do
     describe 'on_sync' do
       before do
         @file = File.dirname(__FILE__) + "/.ttrc"
@@ -12,14 +12,14 @@ module TimeTracker
                   on_sync { |e| post_url }"
 
         end
-        @config = TimeTracker::Config.new @file
+        @sync = TimeTracker::Sync.new @file
       end
       after do
         File.delete @file if File.exists?(@file)
       end
 
       it 'executes block' do
-        @config.sync(:tracking_on).
+        @sync.call(:tracking_on).
           should eq 'http://www.site.com/api/track'
       end
     end

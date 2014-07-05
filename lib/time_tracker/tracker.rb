@@ -1,37 +1,41 @@
-require 'yaml/store'
+require_relative 'entry_log'
 
 module TimeTracker
   class Tracker
 
-    attr_reader :store, :project, :task
-    private :store, :project, :task
+    attr_reader :project, :task, :description
+    private :project, :task, :description
 
     def initialize(args)
-      file = ENV['HOURS'] || "#{ENV['HOME']}/.tt"
-      @store = YAML::Store.new(file)
+      fail 'Project name required' unless !args[:project].nil?
+      fail 'Task name required' unless !args[:task].nil?
       @project = args[:project]
-      @task = args[:task] || 'general'
+      @task = args[:task]
+      @description = args[:description] || 'general'
     end
 
     def track
-      store.transaction do |s|
-        project_tasks = s[project]
-        s[project] = {} unless project_tasks
-        track_tasks(s, project, task)
-        s[project][task]
-      end
-    end
-
-    private
-
-    def track_tasks(store, project, task)
-      time = Time.now
-      tasks = store[project][task]
-      if tasks
-        tasks << time
+      time = Time.now.to_i
+      row = EntryLog.where project_name: project,
+        task_name: task,
+        description: description,
+        start_time: 'is not null',
+        stop_time: 'is null'
+      id = if row.size > 0
+        EntryLog.update id: row.first['id'],
+          stop_time: time
+        row.first['id']
       else
-        store[project][task] = [time]
+        EntryLog.insert start_time: time,
+          stop_time: nil,
+          entry_id: nil,
+          description: description,
+          task_id: nil,
+          task_name: task,
+          project_id: nil,
+          project_name: project
       end
+      EntryLog.where(id: id).first
     end
   end
 end

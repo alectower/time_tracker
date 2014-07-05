@@ -1,18 +1,35 @@
 require 'spec_helper'
+require 'time_tracker/tracker'
 
 module TimeTracker
   describe Tracker do
-    before do
-      ENV['HOURS'] = "#{File.dirname(__FILE__)}/.hours"
+    it 'creates entry with project name' do
+      Tracker.new(project: 'project', task: 'task').
+        track['project_name'].should eq 'project'
     end
 
-    after do
-      File.delete ENV['HOURS'] if File.exists? ENV['HOURS']
+    it 'creates entry with task name' do
+      Tracker.new(project: 'project', task: 'task').
+        track['task_name'].should eq 'task'
     end
 
-    it 'logs timestamps' do
-      Tracker.new(project: 'project', task: 'task').track.size.should eq 1
-      Tracker.new(project: 'project', task: 'task').track.size.should eq 2
+    it 'creates entry with description' do
+      Tracker.new(project: 'project', task: 'task',
+        description: 'description').track['description'].
+        should eq 'description'
+    end
+
+    it 'creates first entry with nil stop time' do
+      Tracker.new(project: 'project',
+        task: 'task').track['stop_time'].should eq nil
+    end
+
+    it 'adds stop time to entry' do
+      e = Tracker.new(project: 'project', task: 'task').track
+      e['stop_time'].should eq nil
+      ent = Tracker.new(project: 'project', task: 'task').track
+      ent['stop_time'].should_not eq nil
+      e['id'].should eq ent['id']
     end
   end
 end

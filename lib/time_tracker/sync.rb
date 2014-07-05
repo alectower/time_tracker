@@ -3,7 +3,10 @@ require 'typhoeus'
 require 'json'
 
 module TimeTracker
-  class Config
+  class Sync
+
+    attr_accessor :db
+
     def initialize(file = "#{ENV['HOME']}/.ttrc")
       FileUtils.touch file unless File.exists?(file)
       self.instance_eval File.read(file), file
@@ -13,10 +16,14 @@ module TimeTracker
       @on_sync = block
     end
 
-    def sync(args)
+    def call(args)
+      sync_entries
       if @on_sync
         @on_sync.call args
       end
+    end
+
+    def sync_entries
     end
 
     def get(url, data = {})

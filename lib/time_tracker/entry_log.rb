@@ -1,0 +1,97 @@
+require_relative 'db'
+
+module TimeTracker
+  class EntryLog
+
+    def self.insert(args)
+      db.execute "insert into entry_logs
+        (start_time, stop_time, entry_id,
+          description, task_id, task_name,
+          project_id, project_name
+        ) values (?, ?, ?, ?, ?, ?, ?, ?)", [
+          args[:start_time],
+          args[:stop_time],
+          args[:entry_id],
+          args[:description],
+          args[:task_id],
+          args[:task_name].to_s,
+          args[:project_id],
+          args[:project_name].to_s
+        ]
+      db.execute("select last_insert_rowid()").
+        first[0]
+    end
+
+    def self.update(args)
+      db.execute "update entry_logs
+        set stop_time = ?
+        where id = ?", [
+          args[:stop_time],
+          args[:id]
+        ]
+    end
+
+    def self.where(args)
+      sql = select.dup
+      params = []
+      first = true
+      args.each do |k, v|
+        add_param(sql, params, k, v, first) if !v.nil?
+        first = false
+      end
+      db.execute sql, params
+    end
+
+    private
+
+    def self.add_param(sql, params, k, v, first)
+      if v =~ /null/
+        sql << where_clause(k, v, first)
+      else
+        sql << where_clause(k, nil, first)
+        params << v
+      end
+    end
+
+    def self.where_clause(key, null, first)
+      sql = first ? " where" : " and"
+      if is_time?(key)
+        sql << set_time_param(key, null)
+      else
+        sql << set_param(key, null)
+      end
+    end
+
+    def self.set_time_param(key, null)
+      if null.nil?
+        " #{key} #{time_comparator(key)} ?"
+      else
+        " #{key} #{null}"
+      end
+    end
+
+    def self.set_param(key, null)
+      if null.nil?
+        " #{key} = ?"
+      else
+        " #{key} #{null}"
+      end
+    end
+
+    def self.is_time?(key)
+      key =~ /time/
+    end
+
+    def self.time_comparator(key)
+      key =~ /start/ ? ">" : "<"
+    end
+
+    def self.db
+      @db ||= DB.new
+    end
+
+    def self.select
+      @select ||= "select * from entry_logs"
+    end
+  end
+end

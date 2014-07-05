@@ -1,0 +1,11 @@
+test:
+  adapter:   sqlite3
+  encoding:  unicode
+  database:  test_ttdb.sqlite3
+  pool:      5
+
+production:
+  adapter:   sqlite3
+  encoding:  unicode
+  database:  ~/.ttdb.sqlite3
+  pool:      5
