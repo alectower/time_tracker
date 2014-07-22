@@ -63,9 +63,9 @@ module TimeTracker
         hours[project][task] = {} unless hours[project][task]
         hours[project][task][description] = {} unless hours[project][task][description]
 
-        start_time = Time.at(e.start_time).utc
+        start_time = Time.at(e.start_time)
         if !e.stop_time.nil? && e.stop_time != 0
-          stop_time = Time.at(e.stop_time).utc
+          stop_time = Time.at(e.stop_time)
         end
         if !hours[project][task][description][start_time.to_date]
           hours[project][task][description][start_time.to_date] = 0
