@@ -3,38 +3,30 @@ require_relative 'db'
 module TimeTracker
   class EntryLog
 
-    attr_reader :id, :start_time, :stop_time, :entry_id,
-      :description, :task_id, :task_name, :project_id,
-      :project_name
+    attr_accessor :id, :start_time, :stop_time,
+      :description, :task_name, :project_name,
+      :entry_log_id, :entry_id, :task_id, :project_id
 
-    def self.insert(args)
-      db.execute "insert into entry_logs
-        (start_time, stop_time, entry_id,
-          description, task_id, task_name,
-          project_id, project_name
-        ) values (?, ?, ?, ?, ?, ?, ?, ?)", [
-          args[:start_time],
-          args[:stop_time],
-          args[:entry_id],
-          args[:description],
-          args[:task_id],
-          args[:task_name].to_s,
-          args[:project_id],
-          args[:project_name].to_s
-        ]
-      id = db.execute("select last_insert_rowid()").
-        first[0]
-      res = db.execute('select * from entry_logs where id = ?', id).first
-      new(res)
+    def initialize(args)
+      args.each do |k, v|
+        if !k.is_a? Integer
+          instance_variable_set "@#{k.to_s}", v
+        end
+      end
     end
 
-    def self.update(args)
-      db.execute "update entry_logs
-        set stop_time = ?
-        where id = ?", [
-          args[:stop_time],
-          args[:id]
-        ]
+    def save
+      if EntryLog.find(id)
+        update
+      else
+        insert
+      end
+    end
+
+    def self.find(id)
+      res = db.execute "select * from entry_logs
+        where id = ?", id
+      res.size > 0 ? new(res.first) : false
     end
 
     def self.where(args)
@@ -53,18 +45,65 @@ module TimeTracker
       results
     end
 
+    def self.unsynced
+      res = db.execute "select * from entry_logs where
+        project_id is null
+        or task_id is null
+        or entry_id is null
+        or entry_log_id is null order by id"
+      results = []
+      res.each do |r|
+        results << new(r)
+      end
+      results
+    end
+
     private
 
-    def initialize(args)
-      @id = args['id']
-      @start_time = args['start_time']
-      @stop_time = args['stop_time']
-      @entry_id = args['entry_id']
-      @description = args['description']
-      @task_id = args['task_id']
-      @task_name = args['task_name'].to_s
-      @project_id = args['project_id']
-      @project_name = args['project_name'].to_s
+    def insert
+      EntryLog.db.execute "insert into entry_logs
+        (start_time, stop_time, description, task_name,
+          project_name, entry_log_id, entry_id,
+          task_id, project_id
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+          start_time,
+          stop_time,
+          description,
+          task_name.to_s,
+          project_name.to_s,
+          entry_log_id,
+          entry_id,
+          task_id,
+          project_id
+        ]
+      res = EntryLog.db.execute('select * from entry_logs where id = (select last_insert_rowid())').first
+      EntryLog.new(res)
+    end
+
+    def update
+      EntryLog.db.execute "update entry_logs set
+        start_time = ?,
+        stop_time = ?,
+        description = ?,
+        task_name = ?,
+        project_name = ?,
+        entry_log_id = ?,
+        entry_id = ?,
+        task_id = ?,
+        project_id = ?
+        where id = ?", [
+          start_time,
+          stop_time,
+          description,
+          task_name.to_s,
+          project_name.to_s,
+          entry_log_id,
+          entry_id,
+          task_id,
+          project_id,
+          id
+        ]
+      EntryLog.find(id)
     end
 
     def self.add_param(sql, params, k, v, first)

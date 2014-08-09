@@ -21,23 +21,18 @@ module TimeTracker
         description: description,
         start_time: 'is not null',
         stop_time: 'is null'
-      id = if entries.size == 1
-        EntryLog.update id: entries.first.id,
-          stop_time: time
-        entries.first.id
+      if entries.size == 1
+        e = entries.first
+        e.stop_time = time
+        e.save
       elsif entries.size > 1
         fail 'Multiple entries found with null stop time'
       else
-        EntryLog.insert(start_time: time,
-          stop_time: nil,
-          entry_id: nil,
+        EntryLog.new(start_time: time,
           description: description,
-          task_id: nil,
           task_name: task,
-          project_id: nil,
-          project_name: project).id
+          project_name: project).save
       end
-      EntryLog.where(id: id).first
     end
   end
 end

@@ -18,6 +18,8 @@ module TimeTracker
         track_time
       when 'hours'
         print_hours
+      when 'sync'
+        sync.call EntryLog.unsynced
       else
         print_options
       end
@@ -29,21 +31,18 @@ module TimeTracker
       project, task, description = project_args
       entry_log = Tracker.new(project: project,
         task: task, description: description).track
-      event = if entry_log.stop_time.nil?
+      if entry_log.stop_time.nil?
         puts "on the clock"
-        :tracking_on
       else
         puts "off the clock"
-        :tracking_off
+        sync.call EntryLog.unsynced
       end
-      sync.call event, entry_log
     end
 
     def project_args
       project_task = ARGV.shift
       project, task, description = project_task.split ':'
       fail 'Project' unless !project.nil? && !project.empty?
-      fail 'Task' unless !task.nil? && !task.empty?
       [project, task, description]
     end
 

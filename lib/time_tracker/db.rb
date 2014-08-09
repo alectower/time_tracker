@@ -5,11 +5,8 @@ module TimeTracker
   class DB
     def initialize
       @env = ENV['TT_ENV'] || 'production'
-      if !File.exists?(path)
-        @db = SQLite3::Database.new(path)
-        setup
-      end
       @db = SQLite3::Database.new(path)
+      create_table unless table_exists?('entry_logs')
       @db.results_as_hash = true
     end
 
@@ -19,26 +16,33 @@ module TimeTracker
 
     def path
       return @path if @path
-      config = YAML::load(File.open(
-        File.expand_path "../../../database.yml", __FILE__
-      ))
+      conf_file = "../../../database.yml"
+      conf_path = File.expand_path conf_file, __FILE__
+      config = YAML::load(File.open(conf_path))
       @path = File.expand_path(config[@env]['database'])
+    end
+
+    def table_exists?(table)
+      execute("SELECT name FROM sqlite_master
+        WHERE type='table' AND name='#{table}'").
+          size > 0;
     end
 
     private
 
-    def setup
+    def create_table
       @db.execute <<-SQL
         create table entry_logs (
           id integer primary key autoincrement,
+          project_name varchar(50),
+          task_name varchar(50),
+          description varchar(100),
           start_time timestamp,
           stop_time timestamp,
-          entry_id int,
-          description varchar(100),
-          task_id int,
-          task_name varchar(50),
           project_id int,
-          project_name varchar(50)
+          task_id int,
+          entry_id int,
+          entry_log_id int
         );
       SQL
     end

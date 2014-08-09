@@ -19,7 +19,7 @@ module TimeTracker
     def call(*args)
       sync_entries
       if @on_sync
-        @on_sync.call args
+        @on_sync.call *args
       end
     end
 
@@ -43,7 +43,7 @@ module TimeTracker
     def request(url, method, data)
       response = Typhoeus.send(method, url, data).
         response_body
-      JSON.parse(response)
+      JSON.parse(response, symbolize_names: true)
     end
   end
 end
