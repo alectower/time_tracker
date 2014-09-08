@@ -47,15 +47,20 @@ module TimeTracker
     end
 
     def print_hours
-      if ARGV.size % 2 != 0
-        project, task, description = project_args
-      end
+      verbose = false
+      rounded = false
       while arg = ARGV.shift
         case arg
+        when /-r|--rounded/
+          rounded = true
+        when /-v|--verbose/
+          verbose = true
         when /-s|--start/
           start_date = get_start_date
         when /-e|--end/
           end_date = get_end_date
+        else
+          project, task, description = project_args
         end
       end
       project_hours = Reporter.new(
@@ -65,7 +70,7 @@ module TimeTracker
         start_date: start_date,
         end_date: end_date
       ).hours_tracked
-      print_projects(project_hours)
+      print_projects(project_hours, verbose, rounded)
     end
 
     def print_options
@@ -104,30 +109,66 @@ module TimeTracker
       Time.new(end_date[0], end_date[1], end_date[2])
     end
 
-    def print_projects(hours)
-      total_hours = hours[:total]
+    def print_projects(hours, verbose, rounded)
+      if rounded
+        if verbose
+          print_project_hours(hours, true)
+        else
+          puts rounded_project_hours(hours)
+        end
+      else
+        if verbose
+          print_project_hours(hours)
+        else
+          puts hours[:total].round(2)
+        end
+      end
+    end
+
+    def rounded_project_hours(hours)
       hours.delete :total
+      hours.inject(0) do |sum, project_task|
+        project_task[1].each do |prj, task|
+          task.delete :total
+          task.each do |t, entries|
+            entries.each do |date, h|
+              sum += nearest_quarter(h)
+            end
+          end
+        end
+        sum
+      end
+    end
+
+    def nearest_quarter(hours)
+      (hours * 4).ceil / 4.0
+    end
+
+    def print_project_hours(hours, rounded = false)
+      hours.delete :total
+      project_hours = 0
       hours.each do |project, tasks|
-        project_hours = print_tasks(project, tasks)
+        project_hours = print_tasks(project, tasks, rounded)
         if project_hours > 0
           puts "  total:                    #{project_hours.round(2)} hours\n\n"
         end
       end
-      puts "All Projects and tasks\ntotal: #{total_hours.round(2)}"
+      puts "All Projects and tasks\ntotal: #{project_hours.round(2)}"
     end
 
-    def print_tasks(project, tasks)
+    def print_tasks(project, tasks, rounded)
       project_hours = 0
       first = true
       tasks.each do |task, description|
-        project_hours += print_task(project, task, description, first)
+        project_hours += print_task(project, task, description, first, rounded)
+        project_hours = nearest_quarter(project_hours) if rounded
         first = false
       end
       project_hours
     end
 
-    def print_task(project, task, description, first)
-      total = description[:total]
+    def print_task(project, task, description, first, rounded)
+      total = 0
       description.delete :total
       if description.size > 0
         if first
@@ -137,7 +178,9 @@ module TimeTracker
         description.each do |title, date|
           puts "    Description: #{title}"
           date.each do |day, hours|
-            puts "      #{day}:           #{hours.round(2)} hours"
+            h = rounded ? nearest_quarter(hours) : hours.round(2)
+            total += h
+            puts "      #{day}:           #{h} hours"
           end
         end
         puts "      total:                #{total.round(2)} hours"
