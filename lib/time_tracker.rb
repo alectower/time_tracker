@@ -19,7 +19,7 @@ module TimeTracker
       when 'hours'
         print_hours
       when 'sync'
-        sync.call EntryLog.unsynced
+        sync.run EntryLog.where 'entry_log_id is null'
       else
         print_options
       end
@@ -28,20 +28,19 @@ module TimeTracker
     private
 
     def track_time
-      project, task, description = project_args
+      project, task, description = project_args(ARGV.shift)
       entry_log = Tracker.new(project: project,
         task: task, description: description).track
-      if entry_log.stop_time.nil?
+      if entry_log.ended_at.nil?
         puts "on the clock"
       else
         puts "off the clock"
-        sync.call EntryLog.unsynced
+        sync.run EntryLog.where 'entry_log_id is null'
       end
     end
 
-    def project_args
-      project_task = ARGV.shift
-      project, task, description = project_task.split ':'
+    def project_args(arg)
+      project, task, description = arg.split ':'
       fail 'Project' unless !project.nil? && !project.empty?
       [project, task, description]
     end
@@ -60,7 +59,7 @@ module TimeTracker
         when /-e|--end/
           end_date = get_end_date
         else
-          project, task, description = project_args
+          project, task, description = project_args(arg)
         end
       end
       project_hours = Reporter.new(
@@ -81,7 +80,9 @@ module TimeTracker
 
         Options\n\
             -s, --start <YYYY-MM-DD>    used with hours command
-            -e, --end <YYYY-MM-DD>      used with hours command\n\n\
+            -e, --end <YYYY-MM-DD>      used with hours command
+            -v, --verbose               used with hours command
+            -r, --rounded               used with hours command\n\n\
         Examples\n\
             time_tracker track company:api\n\
             time_tracker track company:api\n\

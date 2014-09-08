@@ -4,21 +4,21 @@ require 'time_tracker/reporter'
 module TimeTracker
   describe Reporter do
     before do
-      EntryLog.new(start_time: 1388581200,
-        stop_time: 1388584800,
+      EntryLog.create started_at: 1388581200,
+        ended_at: 1388584800,
         project_name: :project_one,
         task_name: :task_one,
-        description: 'task one piece').save
-      EntryLog.new(start_time: 1388588400,
-        stop_time: 1388592000,
+        entry_description: 'task one piece'
+      EntryLog.create started_at: 1388588400,
+        ended_at: 1388592000,
         project_name: :project_one,
         task_name: :task_two,
-        description: 'task two piece').save
-      EntryLog.new(start_time: 1388595600,
-        stop_time: 1388599200,
+        entry_description: 'task two piece'
+      EntryLog.create started_at: 1388595600,
+        ended_at: 1388599200,
         project_name: :project_two,
         task_name: :task_one,
-        description: 'task one piece').save
+        entry_description: 'task one piece'
     end
 
     it 'reports total hours for all tasks of all project' do

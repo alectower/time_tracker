@@ -5,25 +5,20 @@ require 'json'
 module TimeTracker
   class Sync
 
-    attr_accessor :db
+    attr_accessor :api_url, :headers
 
     def initialize(file = "#{ENV['HOME']}/.ttrc")
       FileUtils.touch file unless File.exists?(file)
-      self.instance_eval File.read(file), file
+      instance_eval File.read(file), file
     end
 
-    def on_sync(&block)
-      @on_sync = block
-    end
-
-    def call(*args)
-      sync_entries
-      if @on_sync
-        @on_sync.call *args
+    def run(entries)
+      entries.each do |e|
+        sync_project(e)
+        sync_task(e)
+        sync_entry(e)
+        sync_entry_log(e)
       end
-    end
-
-    def sync_entries
     end
 
     def get(url, data = {})

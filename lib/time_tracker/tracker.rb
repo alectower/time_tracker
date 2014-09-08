@@ -16,22 +16,22 @@ module TimeTracker
 
     def track
       time = Time.now.to_i
-      entries = EntryLog.where project_name: project,
+      entries = EntryLog.where(project_name: project,
         task_name: task,
-        description: description,
-        start_time: 'is not null',
-        stop_time: 'is null'
-      if entries.size == 1
+        entry_description: description).where(
+          'started_at is not null AND ended_at is null'
+        )
+      if entries.count == 1
         e = entries.first
-        e.stop_time = time
+        e.ended_at = time
         e.save
-      elsif entries.size > 1
+      elsif entries.count > 1
         fail 'Multiple entries found with null stop time'
       else
-        EntryLog.new(start_time: time,
-          description: description,
+        EntryLog.create started_at: time,
+          entry_description: description,
           task_name: task,
-          project_name: project).save
+          project_name: project
       end
     end
   end

@@ -33,21 +33,45 @@ module TimeTracker
     private
 
     def all_hours
-      entries = EntryLog.where start_time: start_date,
-        stop_time: end_date
+      sql = if start_date
+        'started_at >= ?'
+      end
+      entries = if end_date
+        sql += ' AND ended_at <= ?'
+        EntryLog.where sql, start_date, end_date
+      else
+        EntryLog.where sql, start_date
+      end
       build_hours(entries)
     end
 
     def project_hours
-      entries = EntryLog.where project_name: project,
-        start_time: start_date, stop_time: end_date
+      sql = if start_date
+        'started_at >= ?'
+      end
+      entries = if end_date
+        sql += ' AND ended_at <= ?'
+        EntryLog.where.where(project_name: project).
+          where sql, start_date, end_date
+      else
+        EntryLog.where.where(project_name: project).
+          where sql, start_date
+      end
       build_hours(entries)
     end
 
     def project_task_hours
-      entries = EntryLog.where project_name: project,
-        task_name: task, start_time: start_date,
-        stop_time: end_date
+      sql = if start_date
+        'started_at >= ?'
+      end
+      entries = if end_date
+        sql += ' AND ended_at <= ?'
+        EntryLog.where.where(project_name: project,
+          task_name: task).where sql, start_date, end_date
+      else
+        EntryLog.where.where(project_name: project,
+          task_name: task).where sql, start_date
+      end
       build_hours(entries)
     end
 
@@ -57,15 +81,15 @@ module TimeTracker
       entries.each do |e|
         project = e.project_name
         task = e.task_name
-        description = e.description
+        description = e.entry_description
 
         hours[project] = {} unless hours[project]
         hours[project][task] = {} unless hours[project][task]
         hours[project][task][description] = {} unless hours[project][task][description]
 
-        start_time = Time.at(e.start_time)
-        if !e.stop_time.nil? && e.stop_time != 0
-          stop_time = Time.at(e.stop_time)
+        start_time = Time.at(e.started_at)
+        if !e.ended_at.nil? && e.ended_at != 0
+          stop_time = Time.at(e.ended_at)
         end
         if !hours[project][task][description][start_time.to_date]
           hours[project][task][description][start_time.to_date] = 0

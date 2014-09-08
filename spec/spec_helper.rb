@@ -1,17 +1,17 @@
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '../lib/time_tracker'))
-require 'rspec'
-require 'db'
-
 ENV['TT_ENV'] = 'test'
 
-RSpec.configure do |config|
-  db = TimeTracker::DB.new
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '../lib/time_tracker'))
+require 'rspec'
 
-  config.after :each do
-    db.execute "delete from entry_logs"
+require 'db'
+require 'entry_log'
+
+RSpec.configure do |config|
+  config.before :each do
+    TimeTracker::EntryLog.dataset.delete
   end
 
   config.after :suite do
-    File.delete db.path
+    File.delete TimeTracker::DB.path
   end
 end

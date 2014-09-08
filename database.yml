@@ -4,6 +4,12 @@ test:
   database:  test_ttdb.sqlite3
   pool:      5
 
+staging:
+  adapter:   sqlite3
+  encoding:  unicode
+  database:  staging_ttdb.sqlite3
+  pool:      5
+
 production:
   adapter:   sqlite3
   encoding:  unicode

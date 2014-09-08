@@ -18,4 +18,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rspec'
   gem.add_dependency 'typhoeus', '~> 0.6.8'
   gem.add_dependency 'sqlite3', '~> 1.3.3'
+  gem.add_dependency 'sequel', '~> 4.13'
 end

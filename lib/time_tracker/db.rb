@@ -1,50 +1,38 @@
-require 'sqlite3'
+require 'sequel'
 require 'yaml'
 
 module TimeTracker
   class DB
-    def initialize
-      @env = ENV['TT_ENV'] || 'production'
-      @db = SQLite3::Database.new(path)
-      create_table unless table_exists?('entry_logs')
-      @db.results_as_hash = true
+
+    def self.connect
+      db = Sequel.connect "sqlite://#{path}"
+      create_table(db) unless db.table_exists? :entry_logs
+      db
     end
 
-    def execute(sql, args = [])
-      @db.execute sql, args
-    end
-
-    def path
-      return @path if @path
+    def self.path
       conf_file = "../../../database.yml"
       conf_path = File.expand_path conf_file, __FILE__
       config = YAML::load(File.open(conf_path))
-      @path = File.expand_path(config[@env]['database'])
-    end
-
-    def table_exists?(table)
-      execute("SELECT name FROM sqlite_master
-        WHERE type='table' AND name='#{table}'").
-          size > 0;
+      env = ENV['TT_ENV'] || 'production'
+      File.expand_path(config[env]['database'])
     end
 
     private
 
-    def create_table
-      @db.execute <<-SQL
-        create table entry_logs (
-          id integer primary key autoincrement,
-          project_name varchar(50),
-          task_name varchar(50),
-          description varchar(100),
-          start_time timestamp,
-          stop_time timestamp,
-          project_id int,
-          task_id int,
-          entry_id int,
-          entry_log_id int
-        );
-      SQL
+    def self.create_table(db)
+      db.create_table :entry_logs do
+        primary_key :id
+        String      :project_name, size: 50
+        String      :task_name, size: 50
+        String      :entry_description
+        DateTime    :started_at
+        DateTime    :ended_at
+        Integer     :project_id
+        Integer     :task_id
+        Integer     :entry_id
+        Integer     :entry_log_id
+      end
     end
   end
 end

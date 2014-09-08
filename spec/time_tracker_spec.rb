@@ -15,20 +15,20 @@ module TimeTracker
 
     it 'creates entry with description' do
       Tracker.new(project: 'project', task: 'task',
-        description: 'description').track.description.
-        should eq 'description'
+        description: 'description').track.entry_description.
+          should eq 'description'
     end
 
     it 'creates first entry with nil stop time' do
       Tracker.new(project: 'project',
-        task: 'task').track.stop_time.should eq nil
+        task: 'task').track.ended_at.should eq nil
     end
 
     it 'adds stop time to entry' do
       e = Tracker.new(project: 'project', task: 'task').track
-      e.stop_time.should eq nil
+      e.ended_at.should eq nil
       ent = Tracker.new(project: 'project', task: 'task').track
-      ent.stop_time.should_not eq nil
+      ent.ended_at.should_not eq nil
       e.id.should eq ent.id
     end
   end

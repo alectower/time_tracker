@@ -8,9 +8,7 @@ module TimeTracker
         @file = File.dirname(__FILE__) + "/.ttrc"
         File.delete @file if File.exists?(@file)
         File.open @file, 'w' do |f|
-          f.puts "post_url = 'http://www.site.com/api/track'\n\
-                  on_sync { |e| post_url }"
-
+          f.puts "@api_url = 'http://www.site.com/api'"
         end
         @sync = TimeTracker::Sync.new @file
       end
@@ -18,9 +16,8 @@ module TimeTracker
         File.delete @file if File.exists?(@file)
       end
 
-      it 'executes block' do
-        @sync.call(:tracking_on).
-          should eq 'http://www.site.com/api/track'
+      it 'creates api_url accessor' do
+        @sync.api_url.should eq 'http://www.site.com/api'
       end
     end
   end
